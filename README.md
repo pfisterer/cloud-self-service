@@ -55,3 +55,5 @@ Postgres, cert-manager, Argo CD itself, the monitoring stack, PowerDNS and dnsdi
 ## Names
 
 `chart/values.yaml` pins each subchart's `fullnameOverride`. Resource names would otherwise derive from the release name, and adopting existing installations under one release would rename every object — including the Service names that the reverse proxies forward to. Change those only in a window where every reference moves with them.
+
+<!-- guard test -->
