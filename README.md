@@ -48,9 +48,35 @@ Resource names stay put, because `chart/values.yaml` pins each subchart's `fulln
 
 Delete the four Deployments during the switch. Argo CD (or `helm upgrade`) recreates them with matching labels; the cost is one pod start, not a rename.
 
+## What you need to bring
+
+The chart installs the four services and the proxy in front of them. Everything they *talk to* is assumed to exist — the same way a chart expects a cluster rather than installing one.
+
+**A Kubernetes cluster with an ingress controller and TLS.** The chart writes `Ingress` objects and leaves the certificate to the cluster; the DHBW installation serves a wildcard from a default TLS store, so no service carries its own. If you are starting from nothing, [k3s-dhbw-cloud-role](https://github.com/pfisterer/k3s-dhbw-cloud-role) is the Ansible role we use.
+
+**PostgreSQL.** One database per service that needs one. Connection strings are passed through pre-created Secrets (`existingSecret`), never as values — so the chart never sees a password and none ends up in a rendered manifest.
+
+**An OIDC issuer** with two clients: a public one the APIs validate tokens against, and a confidential one for the BFF proxy in front of the UI. The proxy needs `offline_access` to be grantable, or a long-idle tab is bounced back to the login instead of refreshed.
+
+**A PowerDNS with its HTTP API enabled** — only if you want the DNS part. This is the one prerequisite that is not obvious, because the service does more than call the API: it pulls a zone's records over a TSIG-signed AXFR and writes changes over RFC 2136. So the nameserver needs
+
+```ini
+api=yes
+webserver=yes
+dnsupdate=yes
+# Empty on purpose: no source IP is trusted, every update must carry a TSIG
+# signature. Per-zone TSIG-ALLOW-AXFR metadata gates transfers the same way.
+allow-dnsupdate-from=
+dnsupdate-require-tsig=true
+```
+
+and it must be reachable from the cluster on port 53 for both TCP and UDP, not only through its API. [dynamic-zones](https://github.com/pfisterer/dynamic-zones) documents this in more detail, including what fronting it with [dnsdist](https://dnsdist.org/) buys you: an authoritative nameserver on the public internet is a reflection amplifier unless ANY-over-UDP is truncated and per-source rates are capped.
+
+**An OpenStack** — only if you want the projects part, with an application credential that can create projects and set quotas.
+
 ## What is deliberately not here
 
-Postgres, cert-manager, Argo CD itself, the monitoring stack, PowerDNS and dnsdist, and the reverse proxy in front of the UI. Those are substrate: they are assumed to exist, and the reference deployment brings them along separately.
+Postgres, cert-manager, Argo CD, the monitoring stack, PowerDNS and dnsdist. Those are substrate. The DHBW installation drives them from a private Ansible repository, which is not published: eleven of its steps are `helm install <upstream chart>`, the cluster bootstrap is the public role linked above, and what remains is specific to one university's certificate authority, alerting and directory. Publishing it would mostly hand you our idiosyncrasies to undo.
 
 ## Names
 
