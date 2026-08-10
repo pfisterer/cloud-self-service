@@ -2,12 +2,12 @@
 
 The umbrella Helm chart for the DHBW cloud self-service platform. It composes four services that each live, and are released, next to their own code:
 
-| Subchart | Repository |
-|---|---|
-| `dynamic-zones` | [pfisterer/dynamic-zones](https://github.com/pfisterer/dynamic-zones) — self-service DNS zones on PowerDNS |
+| Subchart                   | Repository                                                                                                                  |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `dynamic-zones`            | [pfisterer/dynamic-zones](https://github.com/pfisterer/dynamic-zones) — self-service DNS zones on PowerDNS                  |
 | `openstack-management-api` | [pfisterer/openstack-management-api](https://github.com/pfisterer/openstack-management-api) — OpenStack projects and quotas |
-| `role-provider-service` | [pfisterer/role-provider-service](https://github.com/pfisterer/role-provider-service) — groups and authorization |
-| `self-service-ui` | [pfisterer/self-service-ui](https://github.com/pfisterer/self-service-ui) — the web frontend |
+| `role-provider-service`    | [pfisterer/role-provider-service](https://github.com/pfisterer/role-provider-service) — groups and authorization            |
+| `self-service-ui`          | [pfisterer/self-service-ui](https://github.com/pfisterer/self-service-ui) — the web frontend                                |
 
 ## Why an umbrella and not one big chart
 
