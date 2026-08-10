@@ -56,12 +56,24 @@ jobs:
                   changed.append(f"{name} {current} -> {latest}")
 
           if changed:
-              # Bump the platform's own prerelease counter. A new set of
-              # subcharts is a new platform version, or the artifact would be
-              # republished under a version that already means something else.
-              m = re.search(r"^version: (\d+\.\d+\.\d+)-test\.(\d+)$", chart, re.M)
-              base, n = m.group(1), int(m.group(2)) + 1
-              new = f"{base}-test.{n}"
+              # A new set of subcharts is a new platform version, or the
+              # artifact would be republished under a version that already
+              # means something else.
+              #
+              # The result is always a PRERELEASE, and that is the safety
+              # property: staging resolves ">=0.0.0-0" and picks it up, while
+              # production resolves ">=0.0.0" and cannot see it. This job can
+              # therefore never move production on its own — promoting a version
+              # there stays a deliberate act.
+              cur = re.search(r"^version: (\S+)$", chart, re.M).group(1)
+              pre = re.match(r"^(\d+)\.(\d+)\.(\d+)-test\.(\d+)$", cur)
+              if pre:
+                  major, minor, patch, n = (int(g) for g in pre.groups())
+                  new = f"{major}.{minor}.{patch}-test.{n + 1}"
+              else:
+                  major, minor, patch = (int(g) for g in
+                      re.match(r"^(\d+)\.(\d+)\.(\d+)$", cur).groups())
+                  new = f"{major}.{minor}.{patch + 1}-test.1"
               chart = re.sub(r"^version: .*$", f"version: {new}", chart, count=1, flags=re.M)
               chart = re.sub(r'^appVersion: .*$', f'appVersion: "{new}"', chart, count=1, flags=re.M)
               open("chart/Chart.yaml", "w").write(chart)
