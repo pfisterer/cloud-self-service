@@ -1,0 +1,56 @@
+name: Chart
+
+# This repository holds nothing but the umbrella chart, so there is no image to
+# build - the whole job is: does it still resolve and render, and if this is
+# main, publish it.
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  chart:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      # `build`, not `update`: it must honour Chart.lock rather than quietly
+      # resolving something newer. That is also exactly what Argo CD does, so a
+      # lock that has drifted from Chart.yaml fails here instead of there.
+      - name: Resolve dependencies
+        run: helm dependency build chart/
+
+      - name: Lint
+        run: helm lint chart/
+
+      # Renders with the chart's own defaults only. That is a smoke test, not a
+      # deployment check - every environment passes its own values, and the
+      # subchart schemas reject a value this chart cannot know.
+      - name: Render
+        if: '!cancelled()'
+        run: helm template cloud-self-service chart/ > /dev/null
+
+      # The packaged artifact CONTAINS its resolved dependencies (helm package
+      # bundles charts/), so a consumer needs neither this repository nor a
+      # dependency build - which is the point: `helm install oci://...` and Argo
+      # CD both get one self-contained thing.
+      - name: Package and push
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "$GH_TOKEN" | helm registry login ghcr.io \
+            -u "${{ github.actor }}" --password-stdin
+          helm package chart/ --destination "$RUNNER_TEMP"
+          helm push "$RUNNER_TEMP"/*.tgz \
+            "oci://ghcr.io/${{ github.repository_owner }}/charts"

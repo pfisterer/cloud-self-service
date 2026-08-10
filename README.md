@@ -17,11 +17,12 @@ Pinning a subchart version pins that chart's `appVersion`, which pins the image 
 
 ## Installing
 
-The subcharts come from `oci://ghcr.io/pfisterer/charts`, published by each service's own CI:
+The chart is published as an OCI artifact and carries its subcharts inside it, so this needs neither a clone nor a dependency build:
 
 ```sh
-helm dependency build chart/
-helm install cloud-self-service chart/ -f my-values.yaml
+helm install cloud-self-service \
+  oci://ghcr.io/pfisterer/charts/cloud-self-service \
+  --version 0.1.0-test.1 -f my-values.yaml
 ```
 
 Every environment-specific value is passed in. Values for a subchart go under its chart name:
@@ -33,6 +34,19 @@ dynamic-zones:
 ```
 
 Each subchart ships a `values.schema.json`, so a misspelled key fails the render instead of being silently ignored.
+
+To work on the chart itself, resolve the dependencies first — `build`, not `update`, so `Chart.lock` decides:
+
+```sh
+helm dependency build chart/
+helm template cloud-self-service chart/ -f my-values.yaml
+```
+
+## Adopting an existing installation
+
+Resource names stay put, because `chart/values.yaml` pins each subchart's `fullnameOverride`. The **labels** do not: `app.kubernetes.io/instance` derives from the release name, and a Deployment's `spec.selector` is immutable — so the Services get the new selector while the running pods keep the old labels, every endpoint list empties, and everything answers 502.
+
+Delete the four Deployments during the switch. Argo CD (or `helm upgrade`) recreates them with matching labels; the cost is one pod start, not a rename.
 
 ## What is deliberately not here
 
