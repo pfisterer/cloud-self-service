@@ -1,0 +1,99 @@
+name: Bump subcharts
+
+# Deliberately a pull job in this repository rather than a push from each
+# service's CI: that would need a cross-repository token in four places, and
+# this needs none — the workflow only writes to its own repository.
+#
+# It replaces what argocd-image-updater used to do, one level up. The updater
+# rewrote the image tag in a live Application, which is exactly the outside
+# influence the umbrella exists to remove. Here the newest subchart version is
+# written into Chart.yaml, and everything downstream follows from it: subchart
+# version pins appVersion pins image tag.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      # ">=0.0.0-0", not ">=0.0.0": plain ">=0.0.0" excludes prereleases by
+      # semver rule, and the services publish -test.N. The trailing -0 is what
+      # makes them eligible at all.
+      - name: Resolve the newest subchart versions
+        id: resolve
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' | tee "$GITHUB_OUTPUT"
+          import re, subprocess
+
+          chart = open("chart/Chart.yaml").read()
+          deps = re.findall(r"  - name: (\S+)\n    version: (\S+)\n", chart)
+          changed = []
+
+          for name, current in deps:
+              out = subprocess.check_output(
+                  ["helm", "show", "chart",
+                   f"oci://ghcr.io/pfisterer/charts/{name}",
+                   "--version", ">=0.0.0-0"],
+                  text=True, stderr=subprocess.DEVNULL)
+              latest = re.search(r"^version: (\S+)$", out, re.M).group(1)
+              if latest != current:
+                  chart = chart.replace(
+                      f"  - name: {name}\n    version: {current}\n",
+                      f"  - name: {name}\n    version: {latest}\n", 1)
+                  changed.append(f"{name} {current} -> {latest}")
+
+          if changed:
+              # Bump the platform's own prerelease counter. A new set of
+              # subcharts is a new platform version, or the artifact would be
+              # republished under a version that already means something else.
+              m = re.search(r"^version: (\d+\.\d+\.\d+)-test\.(\d+)$", chart, re.M)
+              base, n = m.group(1), int(m.group(2)) + 1
+              new = f"{base}-test.{n}"
+              chart = re.sub(r"^version: .*$", f"version: {new}", chart, count=1, flags=re.M)
+              chart = re.sub(r'^appVersion: .*$', f'appVersion: "{new}"', chart, count=1, flags=re.M)
+              open("chart/Chart.yaml", "w").write(chart)
+              print(f"version={new}")
+              print("changed=" + "; ".join(changed))
+          else:
+              print("changed=")
+          PY
+
+      - name: Update the lock and publish
+        if: steps.resolve.outputs.changed != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CHANGED: ${{ steps.resolve.outputs.changed }}
+          VERSION: ${{ steps.resolve.outputs.version }}
+        run: |
+          set -euo pipefail
+          helm dependency update chart/
+          helm lint chart/
+          helm template cloud-self-service chart/ > /dev/null
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add chart/Chart.yaml chart/Chart.lock
+          git commit -m "release $VERSION" -m "$CHANGED"
+          git push
+
+          # Published from here rather than left to chart.yml: a push made with
+          # GITHUB_TOKEN does not trigger further workflows, so nothing else
+          # would pick this up.
+          echo "$GH_TOKEN" | helm registry login ghcr.io \
+            -u "${{ github.actor }}" --password-stdin
+          helm package chart/ --destination "$RUNNER_TEMP"
+          helm push "$RUNNER_TEMP"/*.tgz \
+            "oci://ghcr.io/${{ github.repository_owner }}/charts"
