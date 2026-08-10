@@ -1,0 +1,4 @@
+# Resolved dependencies. Chart.lock IS committed (Argo CD runs `helm dependency
+# build`, which needs it); the packaged charts it pulls are not.
+chart/charts/
+*.tgz

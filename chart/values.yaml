@@ -1,0 +1,30 @@
+# Defaults for the umbrella chart.
+#
+# Almost nothing lives here on purpose: every value that differs between
+# environments is passed in by the deployment (Argo CD's spec.source.helm.values,
+# rendered from the inventory), and the subcharts carry their own defaults and
+# their own values.schema.json. What remains here is the one thing only the
+# umbrella can decide — what the resources are called.
+#
+# Each subchart's values go under its chart name, e.g.
+#
+#   dynamic-zones:
+#     dynamicZonesAPI: { ... }
+#     powerDNS: { ... }
+
+# Resource names would otherwise derive from the umbrella's release name, which
+# would rename every object the moment these services move under one release —
+# and with them the Service names that oauth2-proxy and the UI's Caddy forward
+# to. Pinned to what the individual releases produced, so adopting them is a
+# no-op. Drop these only in a window where every reference moves too.
+dynamic-zones:
+  fullnameOverride: dynamic-zones
+
+openstack-management-api:
+  fullnameOverride: openstack-management-api
+
+role-provider-service:
+  fullnameOverride: role-provider-service
+
+self-service-ui:
+  fullnameOverride: self-service-ui

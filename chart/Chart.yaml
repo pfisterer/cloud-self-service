@@ -1,0 +1,33 @@
+apiVersion: v2
+name: cloud-self-service
+description: The DHBW cloud self-service platform - DNS zones, OpenStack projects, roles, and the UI in front of them
+type: application
+
+# The platform version, deliberately independent of the four service versions
+# below. It states "these four, in these versions, together" — which is the
+# thing that could not be said before, when each service was its own Argo CD
+# Application pointing at a branch.
+version: 0.1.0-test.1
+appVersion: "0.1.0-test.1"
+
+maintainers:
+  - name: Dennis Pfisterer
+    email: dennis.pfisterer@dhbw.de
+
+# Pulled from the same registry as the images, pinned by version. A subchart
+# version pins that chart's appVersion, which pins the image tag — so "new
+# chart, old image" stops being a state that can occur, rather than one that
+# discipline has to prevent.
+dependencies:
+  - name: dynamic-zones
+    version: 0.7.7-test.1
+    repository: oci://ghcr.io/pfisterer/charts
+  - name: openstack-management-api
+    version: 0.8.4-test.1
+    repository: oci://ghcr.io/pfisterer/charts
+  - name: role-provider-service
+    version: 0.6.4-test.1
+    repository: oci://ghcr.io/pfisterer/charts
+  - name: self-service-ui
+    version: 0.8.5-test.1
+    repository: oci://ghcr.io/pfisterer/charts
