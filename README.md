@@ -67,7 +67,3 @@ dnsupdate-require-tsig=true
 and it must be reachable from the cluster on port 53 for both TCP and UDP, not only through its API. [dynamic-zones](https://github.com/pfisterer/dynamic-zones) documents this in more detail, including what fronting it with [dnsdist](https://dnsdist.org/) buys you: an authoritative nameserver on the public internet is a reflection amplifier unless ANY-over-UDP is truncated and per-source rates are capped.
 
 **An OpenStack** — only if you want the projects part, with an application credential that can create projects and set quotas.
-
-## Names
-
-`chart/values.yaml` pins each subchart's `fullnameOverride`. Resource names would otherwise derive from the release name, and adopting existing installations under one release would rename every object — including the Service names that the reverse proxies forward to. Change those only in a window where every reference moves with them.

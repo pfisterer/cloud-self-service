@@ -12,11 +12,11 @@
 #     dynamicZonesAPI: { ... }
 #     powerDNS: { ... }
 
-# Resource names would otherwise derive from the umbrella's release name, which
-# would rename every object the moment these services move under one release —
-# and with them the Service names that oauth2-proxy and the UI's Caddy forward
-# to. Pinned to what the individual releases produced, so adopting them is a
-# no-op. Drop these only in a window where every reference moves too.
+# Without these, every resource name would carry the release name as a prefix.
+# That is not merely cosmetic: some of these Service names are referenced from
+# outside this chart — the UI's Caddy forwards to them by name — so changing
+# them is a coordinated change, not a rename. Drop or edit these only in a
+# window where every reference moves with them.
 dynamic-zones:
   fullnameOverride: dynamic-zones
 
