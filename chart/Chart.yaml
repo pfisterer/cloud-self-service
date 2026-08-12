@@ -7,8 +7,8 @@ type: application
 # below. It states "these four, in these versions, together" — which is the
 # thing that could not be said before, when each service was its own Argo CD
 # Application pointing at a branch.
-version: 0.1.1-test.3
-appVersion: "0.1.1-test.3"
+version: 0.1.1-test.4
+appVersion: "0.1.1-test.4"
 
 maintainers:
   - name: Dennis Pfisterer
@@ -23,7 +23,7 @@ dependencies:
     version: 0.7.8
     repository: oci://ghcr.io/pfisterer/charts
   - name: openstack-management-api
-    version: 0.8.6-test.2
+    version: 0.8.6-test.3
     repository: oci://ghcr.io/pfisterer/charts
   - name: role-provider-service
     version: 0.6.5
