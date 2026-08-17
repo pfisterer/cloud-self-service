@@ -12,19 +12,30 @@
 #     dynamicZonesAPI: { ... }
 #     powerDNS: { ... }
 
-# Without these, every resource name would carry the release name as a prefix.
-# That is not merely cosmetic: some of these Service names are referenced from
-# outside this chart — the UI's Caddy forwards to them by name — so changing
-# them is a coordinated change, not a rename. Drop or edit these only in a
-# window where every reference moves with them.
+# `enabled` is each subchart's `condition` in Chart.yaml. All on by default;
+# switch one off where its prerequisite does not exist (no PowerDNS reachable, no
+# OpenStack), so that what remains is a working install rather than a service
+# that cannot start. One coupling the chart cannot enforce: turning off
+# dynamic-zones or openstack-management-api leaves the UI pointing at an API that
+# is gone, so clear the matching `selfServiceUI.*BaseUrl` in the same values.
+#
+# `fullnameOverride`: without these, every resource name would carry the release
+# name as a prefix. That is not merely cosmetic — some of these Service names are
+# referenced from outside this chart (the UI's Caddy forwards to them by name),
+# so changing them is a coordinated change, not a rename. Drop or edit these only
+# in a window where every reference moves with them.
 dynamic-zones:
+  enabled: true
   fullnameOverride: dynamic-zones
 
 openstack-management-api:
+  enabled: true
   fullnameOverride: openstack-management-api
 
 role-provider-service:
+  enabled: true
   fullnameOverride: role-provider-service
 
 self-service-ui:
+  enabled: true
   fullnameOverride: self-service-ui

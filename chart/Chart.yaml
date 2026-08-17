@@ -7,6 +7,9 @@ type: application
 # below. It states "these four, in these versions, together" — which is the
 # thing that could not be said before, when each service was its own Argo CD
 # Application pointing at a branch.
+#
+# Written by the bump job, not by hand: it owns the prerelease counter, and a
+# hand-set stable version here would reach production the moment it is pushed.
 version: 0.1.1-test.4
 appVersion: "0.1.1-test.4"
 
@@ -18,16 +21,31 @@ maintainers:
 # version pins that chart's appVersion, which pins the image tag — so "new
 # chart, old image" stops being a state that can occur, rather than one that
 # discipline has to prevent.
+#
+# Every subchart carries a `condition`, all defaulting to on. They exist for the
+# installation that cannot supply one service's prerequisite: without a reachable
+# PowerDNS there is no point deploying dynamic-zones, and without an OpenStack
+# none in deploying the management API. Switching one off is what makes the
+# remainder a working install rather than a half-broken one.
+#
+# The condition needs an `enabled` key inside the subchart's own namespace, which
+# each of these versions is the first to allow — their values.schema.json sets
+# additionalProperties: false, so older versions reject it. Do not lower a pin
+# below these without moving the conditions with it.
 dependencies:
   - name: dynamic-zones
-    version: 0.7.8
+    version: 0.7.9
     repository: oci://ghcr.io/pfisterer/charts
+    condition: dynamic-zones.enabled
   - name: openstack-management-api
-    version: 0.8.6-test.3
+    version: 0.8.6-test.4
     repository: oci://ghcr.io/pfisterer/charts
+    condition: openstack-management-api.enabled
   - name: role-provider-service
-    version: 0.6.5
+    version: 0.6.6
     repository: oci://ghcr.io/pfisterer/charts
+    condition: role-provider-service.enabled
   - name: self-service-ui
-    version: 0.8.8-test.1
+    version: 0.8.8-test.2
     repository: oci://ghcr.io/pfisterer/charts
+    condition: self-service-ui.enabled
