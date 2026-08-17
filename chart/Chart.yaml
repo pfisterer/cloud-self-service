@@ -8,10 +8,17 @@ type: application
 # thing that could not be said before, when each service was its own Argo CD
 # Application pointing at a branch.
 #
-# Written by the bump job, not by hand: it owns the prerelease counter, and a
-# hand-set stable version here would reach production the moment it is pushed.
-version: 0.1.1-test.4
-appVersion: "0.1.1-test.4"
+# Usually written by the bump job, which owns the prerelease counter. But that
+# job only acts when a SUBCHART version moved (`if changed != ''`), so a change
+# to the chart itself — a condition, a default — has to carry its own bump, or it
+# sits on main and is never published: chart.yml refuses to overwrite a version
+# that already exists, and the bump job sees nothing to do.
+#
+# Keep it a prerelease. That is the safety property the bump job relies on:
+# staging resolves ">=0.0.0-0" and picks this up, production resolves ">=0.0.0"
+# and cannot see it, so promoting a version there stays a deliberate act.
+version: 0.1.1-test.5
+appVersion: "0.1.1-test.5"
 
 maintainers:
   - name: Dennis Pfisterer
