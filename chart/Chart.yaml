@@ -20,8 +20,8 @@ type: application
 # is therefore the promotion to production itself — production's Application
 # resolves it on its next refresh and Argo syncs on its own, with no further
 # gate. Set one only when that is what you mean.
-version: 0.1.5-test.1
-appVersion: "0.1.5-test.1"
+version: 0.1.5
+appVersion: "0.1.5"
 
 maintainers:
   - name: Dennis Pfisterer
@@ -44,11 +44,11 @@ maintainers:
 # below these without moving the conditions with it.
 dependencies:
   - name: dynamic-zones
-    version: 0.7.12-test.1
+    version: 0.7.12
     repository: oci://ghcr.io/pfisterer/charts
     condition: dynamic-zones.enabled
   - name: openstack-management-api
-    version: 0.8.9-test.1
+    version: 0.8.9
     repository: oci://ghcr.io/pfisterer/charts
     condition: openstack-management-api.enabled
   - name: role-provider-service
@@ -56,6 +56,6 @@ dependencies:
     repository: oci://ghcr.io/pfisterer/charts
     condition: role-provider-service.enabled
   - name: self-service-ui
-    version: 0.8.10-test.1
+    version: 0.8.10
     repository: oci://ghcr.io/pfisterer/charts
     condition: self-service-ui.enabled
