@@ -20,8 +20,8 @@ type: application
 # is therefore the promotion to production itself — production's Application
 # resolves it on its next refresh and Argo syncs on its own, with no further
 # gate. Set one only when that is what you mean.
-version: 0.1.14-test.1
-appVersion: "0.1.14-test.1"
+version: 0.1.14
+appVersion: "0.1.14"
 
 maintainers:
   - name: Dennis Pfisterer
@@ -44,7 +44,7 @@ maintainers:
 # below these without moving the conditions with it.
 dependencies:
   - name: dynamic-zones
-    version: 0.8.6-test.1
+    version: 0.8.6
     repository: oci://ghcr.io/pfisterer/charts
     condition: dynamic-zones.enabled
   - name: openstack-management-api
