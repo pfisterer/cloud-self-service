@@ -17,9 +17,9 @@ Pinning a subchart version pins that chart's `appVersion`, which pins the image 
 
 ## Versions and releases
 
-Nobody raises the pins by hand in the normal case. A scheduled workflow (`.github/workflows/bump.yml`, every 15 minutes) asks the registry for each subchart's newest version, prereleases included, and when one has moved it writes the new pin into `chart/Chart.yaml`, raises this chart's own version, refreshes `Chart.lock`, lints and renders, commits the result as `release <version>` and publishes the package. It pulls rather than having each service's CI push, so no cross-repository token is needed anywhere. And it publishes by itself because a push made with the workflow's `GITHUB_TOKEN` does not trigger any further workflow.
+The pins do not have to be raised by hand. A scheduled workflow (`.github/workflows/bump.yml`, every 15 minutes) asks the registry for each subchart's newest version, prereleases included, and when one has moved it writes the new pin into `chart/Chart.yaml`, raises this chart's own version, refreshes `Chart.lock`, lints and renders, commits the result as `release <version>` and publishes the package. It pulls rather than having each service's CI push, so no cross-repository token is needed anywhere. And it publishes by itself because a push made with the workflow's `GITHUB_TOKEN` does not trigger any further workflow.
 
-What that job writes is always a prerelease: `X.Y.Z-test.N`, counting `N` up, or starting at `-test.1` on the next patch after a stable version. That suffix is the whole promotion model. A consumer that resolves `>=0.0.0-0` follows every prerelease — the trailing `-0` is what admits prereleases at all — while one that resolves `>=0.0.0` sees stable versions only. The DHBW staging environment is the first kind and production the second, so the job can never move production on its own. A version without the suffix is committed by hand, and committing it *is* the promotion: everything resolving `>=0.0.0` picks it up on its next refresh, with no further gate. The suffix describes the platform version, not the pins inside it; a stable version may pin a subchart prerelease.
+What that job writes is always a prerelease: `X.Y.Z-test.N`, counting `N` up, or starting at `-test.1` on the next patch after a stable version. That suffix is the whole promotion model. A consumer that resolves `>=0.0.0-0` follows every prerelease — the trailing `-0` is what admits prereleases at all — while one that resolves `>=0.0.0` sees stable versions only. The DHBW staging environment is the first kind and production the second, so the job can never move production on its own. A version without the suffix is committed by hand, as `release X.Y.Z` — either dropping the suffix from the prerelease staging has been running, or raising pins in the same commit — and committing it *is* the promotion: everything resolving `>=0.0.0` picks it up on its next refresh, with no further gate. The suffix describes the platform version, not the pins inside it; a stable version may pin a subchart prerelease.
 
 The other workflow (`.github/workflows/chart.yml`) runs on every push and pull request to `main`: `helm dependency build`, which honours `Chart.lock` the way Argo CD does, so a lock that has drifted from `Chart.yaml` fails there first; then lint and a render with the chart's own defaults. On `main` it packages and pushes, unless that version is already in the registry — a published version is never overwritten. One consequence to remember: a change to the chart itself, such as a condition or a default, has to carry its own version bump. The bump job only acts when a subchart moved, and the chart workflow skips a version that exists, so without a bump the change sits on `main` and is never published.
 
@@ -60,7 +60,7 @@ The chart installs the four services and, where you switch it on, the BFF proxy 
 
 **PostgreSQL** — for `dynamic-zones` always, for the other two only if you want the data to survive a pod restart. `openstack-management-api` and `role-provider-service` also take `memory`, which seeds mock data instead and needs nothing at all; that is what [Minimal setup for development](#minimal-setup-for-development) uses. `dynamic-zones` has no such mode: its schema lets `database.type: memory` through, but the service does not know that backend and exits at startup.
 
-There are two ways to hand a connection string over, and every subchart supports both. Either set the values (`db.connectionString`, or `database.*` in `dynamic-zones`) and the subchart renders its own Secret — the normal case — or pre-create that Secret yourself and name it in `existingSecret`, in which case the chart renders none and ignores those values.
+There are two ways to hand a connection string over, and every subchart that has a database supports both. Either set the values (`db.connectionString`, or `database.*` in `dynamic-zones`) and the subchart renders its own Secret — the normal case — or pre-create that Secret yourself and name it in `existingSecret`, in which case the chart renders none and ignores those values.
 
 The second route is worth considering for three reasons. Values deployed through a GitOps tool such as Argo CD are visible to everyone who may read its applications, in the UI and in every diff; a Secret is separable by RBAC. One credential appears in two services' Secrets — the role provider's read token is also the management API's `role-provider-api-token` — and a single owner is what keeps those two in step. And rotating a Secret next to a Reloader annotation restarts the pods without touching a chart version.
 
@@ -82,6 +82,8 @@ and it must be reachable from the cluster on port 53 for both TCP and UDP, not o
 
 **An OpenStack** — only if you want the projects part, with credentials that can create projects and set quotas: either an application credential or a service user's password (`openstackManagementApi.openstack.*`), exactly one of the two. The password route is the only one that yields a domain-scoped token, so it is what lets the service be admin of one domain and nowhere else; an application credential is always scoped to a single project.
 
+**An LLM management service** — only if you want the UI's LLM section. It is not part of this chart and may run in another cluster: `self-service-ui`'s `selfServiceUI.llmBaseUrl` switches the section on, and `llmUpstream` (host:port, always TLS) and `llmHost` tell the UI's proxy where to reach it. Left empty, as by default, the section is hidden.
+
 Where a prerequisite is missing, switch that service off rather than letting it start into nothing:
 
 ```yaml
@@ -97,7 +99,7 @@ Both default to on, as do `role-provider-service` and `self-service-ui`. Note th
 
 Two things to know before writing values, both of which cost an afternoon if you find them out by trial:
 
-- **Values are per subchart, not global.** No subchart reads `.Values.global`, so the issuer URL and the client id are repeated under each chart name. That is verbosity, not redundancy — the four services are released separately and can point at different clients.
+- **Values are per subchart, not global.** No subchart reads `.Values.global`, so the issuer URL and the client id are repeated under each chart that talks to the issuer (all but `role-provider-service`). That is verbosity, not redundancy — the four services are released separately and can point at different clients.
 - **The OIDC key is not in the same place everywhere.** `dynamic-zones` and `self-service-ui` take `auth.oidc`; `openstack-management-api` takes `openstackManagementApi.oidc`.
 
 ### Without any infrastructure
