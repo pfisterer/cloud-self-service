@@ -2,3 +2,4 @@
 # build`, which needs it); the packaged charts it pulls are not.
 chart/charts/
 *.tgz
+tmp/
