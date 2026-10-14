@@ -10,6 +10,6 @@ dependencies:
   version: 0.8.0
 - name: self-service-ui
   repository: oci://ghcr.io/pfisterer/charts
-  version: 0.8.119
-digest: sha256:1c439494e3714dcb712c1fdc7565a9fbb3b0928ae2389ac0f86c958363f96078
-generated: "2026-10-14T18:15:59.662801+02:00"
+  version: 0.8.120
+digest: sha256:20d3d63c4dfd93599514714e54116a92e7b3996be6b40886625475928fc07f03
+generated: "2026-10-14T18:59:11.431142+02:00"
