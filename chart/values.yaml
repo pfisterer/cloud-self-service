@@ -35,6 +35,9 @@ openstack-management-api:
 role-provider-service:
   enabled: true
   fullnameOverride: role-provider-service
+  # The chart refuses running without real API tokens; the deployment creates this Secret (db-connection-string, api-tokens) before the sync.
+  roleProviderService:
+    existingSecret: role-provider-service-secret
 
 self-service-ui:
   enabled: true
