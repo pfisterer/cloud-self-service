@@ -56,6 +56,6 @@ dependencies:
     repository: oci://ghcr.io/pfisterer/charts
     condition: role-provider-service.enabled
   - name: self-service-ui
-    version: 0.8.138
+    version: 0.8.139
     repository: oci://ghcr.io/pfisterer/charts
     condition: self-service-ui.enabled
