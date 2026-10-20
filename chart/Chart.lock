@@ -4,12 +4,12 @@ dependencies:
   version: 0.8.13
 - name: openstack-management-api
   repository: oci://ghcr.io/pfisterer/charts
-  version: 0.8.64
+  version: 0.8.65
 - name: role-provider-service
   repository: oci://ghcr.io/pfisterer/charts
   version: 0.8.1
 - name: self-service-ui
   repository: oci://ghcr.io/pfisterer/charts
-  version: 0.8.157
-digest: sha256:61201b5dfba3edc95c3b32e9d06c94b52fe396289040bcfddd0c72f54048a059
-generated: "2026-10-19T15:11:34.094837+02:00"
+  version: 0.8.158
+digest: sha256:3129486a022c994f674eb95ae76f80e2c573eb00dbd5e9a9b16d5f40f19997e3
+generated: "2026-10-20T07:32:02.261577+02:00"
