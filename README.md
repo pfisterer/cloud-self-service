@@ -62,7 +62,7 @@ The chart installs the four services and, where you switch it on, the BFF proxy 
 
 **PostgreSQL** — for `dynamic-zones` always, for the other two only if you want the data to survive a pod restart. `openstack-management-api` and `role-provider-service` also take `memory`, which seeds mock data instead and needs nothing at all; that is what [Minimal setup for development](#minimal-setup-for-development) uses. `dynamic-zones` has no such mode: its schema lets `database.type: memory` through, but the service does not know that backend and exits at startup.
 
-There are two ways to hand a connection string over, and every subchart that has a database supports both. Either set the values (`db.connectionString`, or `database.*` in `dynamic-zones`) and the subchart renders its own Secret — the normal case — or pre-create that Secret yourself and name it in `existingSecret`, in which case the chart renders none and ignores those values.
+There are two ways to hand a connection string over, and every subchart that has a database supports both. Either set the values (`db.connectionString`, or `database.*` in `dynamic-zones`) and the subchart renders its own Secret — the normal case — or pre-create that Secret yourself and name it in `existingSecret`, in which case the chart renders none and ignores those values. `role-provider-service` is the one exception to the normal case: the service refuses to start without API tokens, so this chart's own values name `role-provider-service-secret` as its `existingSecret`, and the deployment creates that Secret (keys `db-connection-string` and `api-tokens`) before the sync. Set `existingSecret: ""` there to have the subchart render it from `db.connectionString` and `api.tokens` instead, as the examples below do.
 
 The second route is worth considering for three reasons. Values deployed through a GitOps tool such as Argo CD are visible to everyone who may read its applications, in the UI and in every diff; a Secret is separable by RBAC. One credential appears in two services' Secrets — the role provider's read token is also the management API's `role-provider-api-token` — and a single owner is what keeps those two in step. And rotating a Secret next to a Reloader annotation restarts the pods without touching a chart version.
 
@@ -84,7 +84,7 @@ and it must be reachable from the cluster on port 53 for both TCP and UDP, not o
 
 **An OpenStack** — only if you want the projects part, with credentials that can create projects and set quotas: either an application credential or a service user's password (`openstackManagementApi.openstack.*`), exactly one of the two. The password route is the only one that yields a domain-scoped token, so it is what lets the service be admin of one domain and nowhere else; an application credential is always scoped to a single project.
 
-**An LLM management service** — only if you want the UI's LLM section. It is not part of this chart and may run in another cluster: `self-service-ui`'s `selfServiceUI.llmBaseUrl` switches the section on, and `llmUpstream` (host:port, always TLS) and `llmHost` tell the UI's proxy where to reach it. Left empty, as by default, the section is hidden.
+**An LLM management service** — only if you want the UI's LLM section. It is not part of this chart and may run in another cluster: `self-service-ui`'s `selfServiceUI.llmBaseUrl` switches the section on, and `llmUpstream` (host:port, always TLS) and `llmHost` tell the UI's proxy where to reach it. Left empty, as by default, the section is hidden. The AI service can also hold projects of the budget tree: `openstack-management-api`'s `openstackManagementApi.aiaas.url` (and its tree token) switches that on, empty leaves it off.
 
 Where a prerequisite is missing, switch that service off rather than letting it start into nothing:
 
@@ -101,7 +101,7 @@ Both default to on, as do `role-provider-service` and `self-service-ui`. Note th
 
 Two things to know before writing values, both of which cost an afternoon if you find them out by trial:
 
-- **Values are per subchart, not global.** No subchart reads `.Values.global`, so the issuer URL and the client id are repeated under each chart that talks to the issuer (all but `role-provider-service`). That is verbosity, not redundancy — the four services are released separately and can point at different clients.
+- **Values are per subchart, not global.** No subchart reads `.Values.global`, so the issuer URL and the client id are repeated under each chart that talks to the issuer (`role-provider-service` only if people are to maintain their groups in the UI, through its `oidc` values). That is verbosity, not redundancy — the four services are released separately and can point at different clients.
 - **The OIDC key is not in the same place everywhere.** `dynamic-zones` and `self-service-ui` take `auth.oidc`; `openstack-management-api` takes `openstackManagementApi.oidc`.
 
 ### Without any infrastructure
@@ -133,6 +133,9 @@ openstack-management-api:
     # switching this to "http".
     roleProvider:
       type: mock
+    # The service refuses the mock role provider in production mode.
+    api:
+      mode: development
     oidc:
       issuerUrl: https://sso.example.org/realms/dev
       clientId: cloud-selfservice
@@ -140,10 +143,12 @@ openstack-management-api:
 role-provider-service:
   roleProviderService:
     hostname: role-provider.192.0.2.1.nip.io
+    # Render the Secret from the values below instead of expecting a pre-created role-provider-service-secret (this chart's default).
+    existingSecret: ""
     db:
       type: memory
     api:
-      tokens: dev-token
+      tokens: dev-read-token-at-least-32-characters
 ```
 
 ```sh
@@ -159,7 +164,7 @@ openstack-management-api:
     roleProvider:
       type: http
       url: http://role-provider-service:8085
-      apiToken: dev-token     # must be one of role-provider's api.tokens
+      apiToken: dev-read-token-at-least-32-characters     # must be one of role-provider's api.tokens
 ```
 
 The token lands in the rendered Secret as `role-provider-api-token`. Worth knowing because the failure mode is quiet: the Deployment reads that key with `optional: true`, so leaving it empty does not stop the pod — every call to the role provider simply goes out unauthenticated and comes back 401.
@@ -260,6 +265,7 @@ openstack-management-api:
       type: postgres
       connectionString: "host=postgres-cluster-rw user=openstack_management_api password=dev dbname=openstack_management_api port=5432 sslmode=disable TimeZone=UTC"
     roleProvider: { type: mock }
+    api: { mode: development }
     oidc:
       issuerUrl: https://sso.example.org/realms/dev
       clientId: cloud-selfservice
@@ -267,11 +273,12 @@ openstack-management-api:
 role-provider-service:
   roleProviderService:
     hostname: role-provider.192.0.2.1.nip.io
+    existingSecret: ""
     db:
       type: postgres
       connectionString: "host=postgres-cluster-rw user=role_provider_service password=dev dbname=role_provider_service port=5432 sslmode=disable TimeZone=UTC"
     api:
-      tokens: dev-token
+      tokens: dev-read-token-at-least-32-characters
 
 self-service-ui:
   selfServiceUI:
@@ -291,7 +298,7 @@ The chart's boundary is not "everything it could install" but "everything whose 
 | | Owner |
 | --- | --- |
 | Deployments, Services, Ingresses of the four services | this chart |
-| Their Secrets — connection strings, API tokens, credentials | this chart, unless `existingSecret` names one you created |
+| Their Secrets — connection strings, API tokens, credentials | this chart, unless `existingSecret` names one you created (for `role-provider-service` it does by default) |
 | The BFF proxy in front of the UI (`bff.enabled` in `self-service-ui`) | this chart; it derives its upstream from that chart's own Service. Its Secret (`bff.existingSecret`) is always yours |
 | Ingress controller, TLS certificate, shared Traefik middlewares | your cluster |
 | PostgreSQL, PowerDNS, OIDC issuer, OpenStack | your cluster |
