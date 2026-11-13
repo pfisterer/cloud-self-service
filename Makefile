@@ -1,7 +1,7 @@
 # Releasing the umbrella from this machine instead of waiting for the scheduled job (bump.yml, every 15 minutes) and chart.yml.
 #
 #   make bump              newest subcharts including -test.N, next -test version (what the scheduled job does)
-#   make bump V=0.1.91     a deliberate version; a stable one takes only stable subcharts (production resolves ">=0.0.0" and syncs it on its own)
+#   make bump V=0.1.91     a deliberate version; a stable one takes only stable subcharts (production pins an exact version and gets it only when the dhbw-deployment inventory is raised to it)
 #   make publish           commit first; then lock, lint, package, push the chart to GHCR and push the commits
 #
 # Needs `helm registry login ghcr.io` with a token that may write packages.

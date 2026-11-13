@@ -2,7 +2,7 @@
 
 Used by the scheduled workflow (bump.yml) and by `make bump` on a developer's machine, so both decide the same way.
 
-Without an argument it is the scheduled job's rule: the newest subchart versions including prereleases (">=0.0.0-0"; the services publish -test.N), and the result is always a PRERELEASE — staging resolves ">=0.0.0-0" and picks it up, production resolves ">=0.0.0" and cannot see it, so this can never move production on its own.
+Without an argument it is the scheduled job's rule: the newest subchart versions including prereleases (">=0.0.0-0"; the services publish -test.N), and the result is always a PRERELEASE — staging resolves ">=0.0.0-0" and picks it up; production pins an exact version (dhbw-deployment inventory), so this can never move production on its own.
 
 With a version (`bump.py 0.1.91`), it is a deliberate promotion: a stable version takes the newest STABLE subcharts only (">=0.0.0"), a -test version the newest of all.
 
