@@ -7,9 +7,9 @@ dependencies:
   version: 0.8.85
 - name: role-provider-service
   repository: oci://ghcr.io/pfisterer/charts
-  version: 0.11.7
+  version: 0.12.0
 - name: self-service-ui
   repository: oci://ghcr.io/pfisterer/charts
   version: 0.8.204
-digest: sha256:8242c6148abbe39e46650a600ff1957ed53189f63008937b4d371247443bdddc
-generated: "2026-11-16T12:20:05.369066+01:00"
+digest: sha256:4ae7f8b6784122b6c6728e490b65d6f16a2a0344a9862dc166dfc39c49b3de4b
+generated: "2026-11-16T14:37:17.192507+01:00"
