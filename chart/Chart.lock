@@ -1,7 +1,7 @@
 dependencies:
 - name: dynamic-zones
   repository: oci://ghcr.io/pfisterer/charts
-  version: 0.8.27
+  version: 0.9.0
 - name: openstack-management-api
   repository: oci://ghcr.io/pfisterer/charts
   version: 0.8.89
@@ -10,6 +10,6 @@ dependencies:
   version: 0.13.0
 - name: self-service-ui
   repository: oci://ghcr.io/pfisterer/charts
-  version: 0.8.220
-digest: sha256:d2d4e9c757be39272bbfc0a59eb4defcf8d8aa0f094cd3186c3dbd74ef82f91b
-generated: "2026-11-24T11:02:12.311199671Z"
+  version: 0.8.221
+digest: sha256:a8079a08ff73646da5e26a530b08b7578e13d591daee2b85b00eec3a6105ada9
+generated: "2026-11-24T13:21:58.899836135Z"
