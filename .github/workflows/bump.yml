@@ -9,10 +9,16 @@ name: Bump subcharts
 # influence the umbrella exists to remove. Here the newest subchart version is
 # written into Chart.yaml, and everything downstream follows from it: subchart
 # version pins appVersion pins image tag.
+# Every 5 minutes (GitHub's shortest schedule; runs can start a few minutes late): the services publish every green commit on main, and staging should not wait a quarter of an hour for it. A service's CI can also start this right away with workflow_dispatch if it has a token for that (UMBRELLA_DISPATCH_TOKEN, see README).
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
+
+# Schedule and dispatch can overlap; two bumps at once would both try to publish the next version.
+concurrency:
+  group: bump
+  cancel-in-progress: false
 
 jobs:
   bump:
