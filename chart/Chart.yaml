@@ -20,8 +20,8 @@ type: application
 # is therefore the promotion to production itself — production's Application
 # resolves it on its next refresh and Argo syncs on its own, with no further
 # gate. Set one only when that is what you mean.
-version: 0.1.233-test.4
-appVersion: "0.1.233-test.4"
+version: 0.1.233-test.5
+appVersion: "0.1.233-test.5"
 
 maintainers:
   - name: Dennis Pfisterer
@@ -48,11 +48,11 @@ dependencies:
     repository: oci://ghcr.io/pfisterer/charts
     condition: dynamic-zones.enabled
   - name: openstack-management-api
-    version: 0.8.91-0.ci.254
+    version: 0.8.91
     repository: oci://ghcr.io/pfisterer/charts
     condition: openstack-management-api.enabled
   - name: role-provider-service
-    version: 0.13.2-0.ci.80
+    version: 0.13.2
     repository: oci://ghcr.io/pfisterer/charts
     condition: role-provider-service.enabled
   - name: self-service-ui
@@ -61,6 +61,6 @@ dependencies:
     condition: self-service-ui.enabled
   # Off by default (values.yaml), unlike the four above: an environment switches it on once it has a database, the secrets and a mail server for it, so a new umbrella version changes nothing where that is not done.
   - name: notifications
-    version: 0.1.1-0.ci.8
+    version: 0.1.1
     repository: oci://ghcr.io/pfisterer/charts
     condition: notifications.enabled
