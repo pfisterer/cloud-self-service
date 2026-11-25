@@ -37,32 +37,51 @@ jobs:
       # ">=0.0.0-0", not ">=0.0.0": plain ">=0.0.0" excludes prereleases by
       # semver rule, and the services publish -test.N. The trailing -0 is what
       # makes them eligible at all.
-      - name: Resolve the newest subchart versions
-        id: resolve
-        # The rule itself is in hack/bump.py, shared with `make bump`.
-        run: python3 hack/bump.py | tee "$GITHUB_OUTPUT"
-
-      - name: Update the lock and publish
-        if: steps.resolve.outputs.changed != ''
+      # The rule itself is in hack/bump.py, shared with `make bump`.
+      # Resolve, commit and push in one loop: a push can be rejected when main moved meanwhile (a release commit, or a bump started just before this one with an older checkout). Then the bump starts over on the fresh main — resolving again, since the next version depends on what is there — instead of ending red; at most three tries.
+      - name: Resolve, update the lock and push
+        id: bump
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CHANGED: ${{ steps.resolve.outputs.changed }}
-          VERSION: ${{ steps.resolve.outputs.version }}
         run: |
           set -euo pipefail
-          helm dependency update chart/
-          helm lint chart/
-          helm template cloud-self-service chart/ > /dev/null
-
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add chart/Chart.yaml chart/Chart.lock
-          git commit -m "release $VERSION" -m "$CHANGED"
-          git push
+          for try in 1 2 3; do
+            git fetch --quiet origin main
+            git reset --quiet --hard origin/main
+            out=$(python3 hack/bump.py)
+            echo "$out"
+            changed=$(printf '%s\n' "$out" | sed -n 's/^changed=//p')
+            version=$(printf '%s\n' "$out" | sed -n 's/^version=//p')
+            if [ -z "$changed" ]; then
+              echo "changed=" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            helm dependency update chart/
+            helm lint chart/
+            helm template cloud-self-service chart/ > /dev/null
+            git add chart/Chart.yaml chart/Chart.lock
+            git commit --quiet -m "release $version" -m "$changed"
+            if git push --quiet origin HEAD:main; then
+              { echo "changed=$changed"; echo "version=$version"; } >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "::warning::push rejected (try $try), main moved; starting over on the fresh main"
+            sleep $((try * 5))
+          done
+          echo "::error::push rejected three times"
+          exit 1
 
-          # Published from here rather than left to chart.yml: a push made with
-          # GITHUB_TOKEN does not trigger further workflows, so nothing else
-          # would pick this up.
+      # Published from here rather than left to chart.yml: a push made with
+      # GITHUB_TOKEN does not trigger further workflows, so nothing else
+      # would pick this up.
+      - name: Publish the chart
+        if: steps.bump.outputs.changed != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
           echo "$GH_TOKEN" | helm registry login ghcr.io \
             -u "${{ github.actor }}" --password-stdin
           helm package chart/ --destination "$RUNNER_TEMP"
