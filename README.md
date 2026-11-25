@@ -1,6 +1,6 @@
 # cloud-self-service
 
-The umbrella Helm chart for the DHBW cloud self-service platform. It composes four services that each live, and are released, next to their own code:
+The umbrella Helm chart for the DHBW cloud self-service platform. It composes the services that each live, and are released, next to their own code:
 
 | Subchart                   | Repository                                                                                                                  |
 | -------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
@@ -8,6 +8,7 @@ The umbrella Helm chart for the DHBW cloud self-service platform. It composes fo
 | `openstack-management-api` | [pfisterer/openstack-management-api](https://github.com/pfisterer/openstack-management-api) — OpenStack projects and quotas |
 | `role-provider-service`    | [pfisterer/role-provider-service](https://github.com/pfisterer/role-provider-service) — groups and authorization            |
 | `self-service-ui`          | [pfisterer/self-service-ui](https://github.com/pfisterer/self-service-ui) — the web frontend                                |
+| `notifications`            | [pfisterer/notifications](https://github.com/pfisterer/notifications) — notifications by mail (off by default)              |
 
 ## Why an umbrella and not one big chart
 
@@ -95,7 +96,7 @@ openstack-management-api:
   enabled: false             # no OpenStack
 ```
 
-Both default to on, as do `role-provider-service` and `self-service-ui`. Note the one coupling the chart cannot enforce: switching off an API leaves the UI pointing at something that is gone, so clear the matching `selfServiceUI.dynamicZonesBaseUrl` or `cloudResourcesBaseUrl` in the same values.
+Both default to on, as do `role-provider-service` and `self-service-ui`. `notifications` is the exception: it defaults to off, and an environment switches it on (`notifications.enabled: true`) once it provides its database, its Secret (`notifications.notifications.existingSecret`) and a mail server; the UI's settings page appears with `self-service-ui.selfServiceUI.notificationsBaseUrl: /api/notifications`. Note the one coupling the chart cannot enforce: switching off an API leaves the UI pointing at something that is gone, so clear the matching `selfServiceUI.dynamicZonesBaseUrl` or `cloudResourcesBaseUrl` in the same values.
 
 ## Minimal setup for development
 

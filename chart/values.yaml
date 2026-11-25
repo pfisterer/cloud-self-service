@@ -42,3 +42,8 @@ role-provider-service:
 self-service-ui:
   enabled: true
   fullnameOverride: self-service-ui
+
+# The notification service. Off unless an environment switches it on: it needs its own database, a Secret (existingSecret: notifications-secret with db-connection-string, service-tokens, unsubscribe-secret, …) and a mail server, none of which this chart brings.
+notifications:
+  enabled: false
+  fullnameOverride: notifications
