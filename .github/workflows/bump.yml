@@ -85,5 +85,9 @@ jobs:
           echo "$GH_TOKEN" | helm registry login ghcr.io \
             -u "${{ github.actor }}" --password-stdin
           helm package chart/ --destination "$RUNNER_TEMP"
-          helm push "$RUNNER_TEMP"/*.tgz \
-            "oci://ghcr.io/${{ github.repository_owner }}/charts"
+          # GHCR sometimes answers "failed to perform Tag … not found" right after the upload; a second push succeeds.
+          for i in 1 2 3; do
+            helm push "$RUNNER_TEMP"/*.tgz "oci://ghcr.io/${{ github.repository_owner }}/charts" && exit 0
+            echo "::warning::helm push failed (try $i), retrying"; sleep $((i * 10))
+          done
+          exit 1
