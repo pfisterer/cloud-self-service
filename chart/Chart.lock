@@ -10,9 +10,9 @@ dependencies:
   version: 0.13.4
 - name: self-service-ui
   repository: oci://ghcr.io/pfisterer/charts
-  version: 0.8.229-0.ci.439
+  version: 0.8.229-0.ci.440
 - name: notifications
   repository: oci://ghcr.io/pfisterer/charts
   version: 0.1.4-0.ci.14
-digest: sha256:7979c4329f2679944753c21817d0b587487352ca46c9f89619ee84c4f4b8e092
-generated: "2026-11-26T14:28:13.081963012Z"
+digest: sha256:ab7ddb7fce1adef3d3e94e1c1b45581b0e524e9e1e8cac1de14720e877c815cb
+generated: "2026-11-26T14:33:02.377344599Z"
