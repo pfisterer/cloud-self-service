@@ -20,8 +20,8 @@ type: application
 # is therefore the promotion to production itself — production's Application
 # resolves it on its next refresh and Argo syncs on its own, with no further
 # gate. Set one only when that is what you mean.
-version: 0.1.238-test.3
-appVersion: "0.1.238-test.3"
+version: 0.1.238
+appVersion: "0.1.238"
 
 maintainers:
   - name: Dennis Pfisterer
@@ -61,6 +61,6 @@ dependencies:
     condition: self-service-ui.enabled
   # Off by default (values.yaml), unlike the four above: an environment switches it on once it has a database, the secrets and a mail server for it, so a new umbrella version changes nothing where that is not done.
   - name: notifications
-    version: 0.1.4-0.ci.14
+    version: 0.1.3
     repository: oci://ghcr.io/pfisterer/charts
     condition: notifications.enabled

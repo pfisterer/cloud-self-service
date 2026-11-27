@@ -13,6 +13,6 @@ dependencies:
   version: 0.8.230
 - name: notifications
   repository: oci://ghcr.io/pfisterer/charts
-  version: 0.1.4-0.ci.14
-digest: sha256:8bf09ed9a71c2f1e057eb21cb194420787641abc5e980917696e8d188b308e72
-generated: "2026-11-27T07:32:26.440116721Z"
+  version: 0.1.3
+digest: sha256:1187a217bc03c8885ee161bc5fdf4a3da9156d1ae7f9b0f63cb9bd8b88ca3685
+generated: "2026-11-27T08:33:03.354089+01:00"
